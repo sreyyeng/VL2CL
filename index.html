@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vless to Clash 转换工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .content {
+            padding: 30px;
+        }
+
+        .section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::before {
+            content: '';
+            width: 4px;
+            height: 20px;
+            background: #667eea;
+            margin-right: 10px;
+            border-radius: 2px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            font-family: 'Courier New', monospace;
+        }
+
+        input[type="text"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f5f5f5;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .btn-success {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-upload-label {
+            padding: 12px 24px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            display: inline-block;
+            cursor: pointer;
+            color: #667eea;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .file-upload-label:hover {
+            background: #f0f4ff;
+            border-color: #764ba2;
+        }
+
+        .proxy-list {
+            margin-top: 20px;
+        }
+
+        .proxy-item {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s;
+        }
+
+        .proxy-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+        }
+
+        .proxy-info {
+            flex: 1;
+        }
+
+        .proxy-name {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .proxy-details {
+            font-size: 12px;
+            color: #666;
+            font-family: 'Courier New', monospace;
+        }
+
+        .proxy-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #10b981;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #ef4444;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            color: #1e40af;
+            border: 1px solid #3b82f6;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        @media (max-width: 768px) {
+            .button-group {
+                flex-direction: column;
+            }
+
+            button {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .stats {
+                flex-direction: column;
+            }
+
+            .proxy-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .proxy-actions {
+                margin-top: 10px;
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Vless to Clash 转换工具</h1>
+            <p>轻松管理你的 Vless 节点配置</p>
+        </div>
+
+        <div class="content">
+            <div id="alertBox" class="alert"></div>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <div class="stat-number" id="proxyCount">0</div>
+                    <div class="stat-label">节点数量</div>
+                </div>
+            </div>
+
+            <!-- 导入已有配置 -->
+            <div class="section">
+                <div class="section-title">📁 导入已有配置</div>
+                <div class="button-group">
+                    <label for="yamlFile" class="file-upload-label">
+                        📤 选择 YAML 文件
+                    </label>
+                    <input type="file" id="yamlFile" accept=".yaml,.yml" onchange="handleFileUpload(event)">
+                    <button class="btn-secondary" onclick="clearAll()">🗑️ 清空所有节点</button>
+                </div>
+            </div>
+
+            <!-- 添加单个节点 -->
+            <div class="section">
+                <div class="section-title">➕ 添加单个节点</div>
+                <div class="input-group">
+                    <label for="singleVless">Vless 链接</label>
+                    <input type="text" id="singleVless" placeholder="vless://uuid@server:port?...#name">
+                </div>
+                <button class="btn-primary" onclick="addSingleProxy()">添加节点</button>
+            </div>
+
+            <!-- 批量添加节点 -->
+            <div class="section">
+                <div class="section-title">📋 批量添加节点</div>
+                <div class="input-group">
+                    <label for="batchVless">Vless 链接（每行一个）</label>
+                    <textarea id="batchVless" placeholder="vless://uuid@server:port?...#name1&#10;vless://uuid@server:port?...#name2&#10;vless://uuid@server:port?...#name3"></textarea>
+                </div>
+                <button class="btn-primary" onclick="addBatchProxies()">批量添加</button>
+            </div>
+
+            <!-- 节点列表 -->
+            <div class="section">
+                <div class="section-title">📊 节点列表</div>
+                <div style="margin-bottom: 15px;">
+                    <button class="btn-secondary" onclick="batchRename()">🏷️ 批量重命名</button>
+                </div>
+                <div id="proxyList" class="proxy-list">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <p>暂无节点，请添加 Vless 链接</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 导出配置 -->
+            <div class="section">
+                <div class="section-title">💾 导出配置</div>
+                <button class="btn-success" onclick="exportYaml()">📥 下载 Clash YAML 文件</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let proxies = [];
+
+        // 解析 Vless 链接
+        function parseVlessUrl(url) {
+            try {
+                if (!url.startsWith('vless://')) {
+                    throw new Error('不是有效的 Vless 链接');
+                }
+
+                // 移除 vless:// 前缀
+                const content = url.substring(8);
+                
+                // 分离备注名称
+                let [main, name] = content.split('#');
+                name = name ? decodeURIComponent(name) : 'Vless节点';
+
+                // 分离用户信息和服务器信息
+                const [userInfo, serverInfo] = main.split('@');
+                const uuid = userInfo;
+
+                // 分离服务器地址、端口和参数
+                const [serverPort, params] = serverInfo.split('?');
+                const [server, port] = serverPort.split(':');
+
+                // 解析参数
+                const urlParams = new URLSearchParams(params);
+                
+                const security = urlParams.get('security') || urlParams.get('encryption') || 'none';
+                const network = urlParams.get('type') || 'tcp';
+                
+                const proxy = {
+                    name: name,
+                    type: 'vless',
+                    server: server,
+                    port: parseInt(port),
+                    uuid: uuid,
+                    network: network,
+                    tls: security === 'tls' || security === 'reality',
+                    'skip-cert-verify': urlParams.get('allowInsecure') === '1' || urlParams.get('allowInsecure') === 'true'
+                };
+
+                // 处理 TLS/SNI 配置
+                if (proxy.tls) {
+                    const sni = urlParams.get('sni') || urlParams.get('peer') || urlParams.get('host');
+                    if (sni) {
+                        proxy.servername = sni;
+                    }
+                }
+
+                // Flow 控制（Reality 和 XTLS 需要）
+                const flow = urlParams.get('flow');
+                if (flow) {
+                    proxy.flow = flow;
+                }
+
+                // Reality 协议支持
+                if (security === 'reality') {
+                    const publicKey = urlParams.get('pbk') || urlParams.get('publicKey');
+                    const shortId = urlParams.get('sid') || urlParams.get('shortId') || '';
+                    
+                    if (publicKey) {
+                        proxy['reality-opts'] = {
+                            'public-key': publicKey,
+                            'short-id': shortId
+                        };
+                    }
+                }
+
+                // 处理传输协议相关配置
+                if (network === 'ws') {
+                    proxy['ws-opts'] = {
+                        path: urlParams.get('path') || '/',
+                        headers: {}
+                    };
+                    const host = urlParams.get('host');
+                    if (host) {
+                        proxy['ws-opts'].headers.Host = host;
+                    }
+                } else if (network === 'grpc') {
+                    proxy['grpc-opts'] = {
+                        'grpc-service-name': urlParams.get('serviceName') || urlParams.get('service') || ''
+                    };
+                } else if (network === 'h2' || network === 'http') {
+                    proxy['h2-opts'] = {
+                        path: urlParams.get('path') || '/',
+                        host: urlParams.get('host') ? [urlParams.get('host')] : []
+                    };
+                }
+
+                return proxy;
+            } catch (error) {
+                console.error('解析 Vless 链接失败:', error);
+                throw error;
+            }
+        }
+
+        // 添加单个节点
+        function addSingleProxy() {
+            const input = document.getElementById('singleVless');
+            const url = input.value.trim();
+
+            if (!url) {
+                showAlert('请输入 Vless 链接', 'error');
+                return;
+            }
+
+            try {
+                const proxy = parseVlessUrl(url);
+                proxies.push(proxy);
+                input.value = '';
+                updateProxyList();
+                showAlert(`成功添加节点: ${proxy.name}`, 'success');
+            } catch (error) {
+                showAlert(`解析失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 批量添加节点
+        function addBatchProxies() {
+            const input = document.getElementById('batchVless');
+            const urls = input.value.trim().split('\n').filter(line => line.trim());
+
+            if (urls.length === 0) {
+                showAlert('请输入至少一个 Vless 链接', 'error');
+                return;
+            }
+
+            let successCount = 0;
+            let failCount = 0;
+
+            urls.forEach(url => {
+                try {
+                    const proxy = parseVlessUrl(url.trim());
+                    proxies.push(proxy);
+                    successCount++;
+                } catch (error) {
+                    failCount++;
+                    console.error('解析失败:', url, error);
+                }
+            });
+
+            input.value = '';
+            updateProxyList();
+            showAlert(`成功添加 ${successCount} 个节点${failCount > 0 ? `，失败 ${failCount} 个` : ''}`, 
+                      failCount > 0 ? 'info' : 'success');
+        }
+
+        // 批量重命名
+        function batchRename() {
+            if (proxies.length === 0) {
+                showAlert('当前没有节点', 'info');
+                return;
+            }
+
+            const action = prompt(
+                '批量重命名选项：\n' +
+                '1. 添加前缀（输入：前缀 你的前缀）\n' +
+                '2. 添加后缀（输入：后缀 你的后缀）\n' +
+                '3. 批量设置序号（输入：序号 起始数字）\n' +
+                '例如：前缀 香港-\n' +
+                '例如：后缀 -高速\n' +
+                '例如：序号 1\n\n' +
+                '请输入：'
+            );
+
+            if (!action) return;
+
+            const parts = action.trim().split(/\s+/);
+            if (parts.length < 2) {
+                showAlert('格式错误，请按照提示格式输入', 'error');
+                return;
+            }
+
+            const [type, value] = [parts[0], parts.slice(1).join(' ')];
+            let count = 0;
+
+            if (type === '前缀') {
+                proxies.forEach(proxy => {
+                    proxy.name = value + proxy.name;
+                    count++;
+                });
+                showAlert(`已为 ${count} 个节点添加前缀 "${value}"`, 'success');
+            } else if (type === '后缀') {
+                proxies.forEach(proxy => {
+                    proxy.name = proxy.name + value;
+                    count++;
+                });
+                showAlert(`已为 ${count} 个节点添加后缀 "${value}"`, 'success');
+            } else if (type === '序号') {
+                const startNum = parseInt(value);
+                if (isNaN(startNum)) {
+                    showAlert('序号必须是数字', 'error');
+                    return;
+                }
+                proxies.forEach((proxy, index) => {
+                    const num = String(startNum + index).padStart(2, '0');
+                    proxy.name = `[${num}] ${proxy.name}`;
+                    count++;
+                });
+                showAlert(`已为 ${count} 个节点添加序号`, 'success');
+            } else {
+                showAlert('未知的操作类型，请输入：前缀、后缀 或 序号', 'error');
+                return;
+            }
+
+            updateProxyList();
+        }
+
+        // 编辑节点名称
+        function editProxyName(index) {
+            const proxy = proxies[index];
+            const newName = prompt(`请输入新的节点名称：`, proxy.name);
+            
+            if (newName !== null && newName.trim() !== '') {
+                const oldName = proxy.name;
+                proxy.name = newName.trim();
+                updateProxyList();
+                showAlert(`节点 "${oldName}" 已重命名为 "${proxy.name}"`, 'success');
+            }
+        }
+
+        // 删除节点
+        function deleteProxy(index) {
+            const proxy = proxies[index];
+            if (confirm(`确定要删除节点 "${proxy.name}" 吗？`)) {
+                proxies.splice(index, 1);
+                updateProxyList();
+                showAlert(`已删除节点: ${proxy.name}`, 'success');
+            }
+        }
+
+        // 清空所有节点
+        function clearAll() {
+            if (proxies.length === 0) {
+                showAlert('当前没有节点', 'info');
+                return;
+            }
+
+            if (confirm(`确定要清空所有 ${proxies.length} 个节点吗？`)) {
+                proxies = [];
+                updateProxyList();
+                showAlert('已清空所有节点', 'success');
+            }
+        }
+
+        // 更新节点列表显示
+        function updateProxyList() {
+            const listContainer = document.getElementById('proxyList');
+            const countElement = document.getElementById('proxyCount');
+            
+            countElement.textContent = proxies.length;
+
+            if (proxies.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        <p>暂无节点，请添加 Vless 链接</p>
+                    </div>
+                `;
+                return;
+            }
+
+            listContainer.innerHTML = proxies.map((proxy, index) => {
+                let details = `${proxy.server}:${proxy.port} | ${proxy.network}`;
+                if (proxy.tls) details += ' + TLS';
+                if (proxy['reality-opts']) details += ' (Reality)';
+                if (proxy.flow) details += ` | flow: ${proxy.flow}`;
+                
+                return `
+                    <div class="proxy-item">
+                        <div class="proxy-info">
+                            <div class="proxy-name">${proxy.name}</div>
+                            <div class="proxy-details">${details}</div>
+                        </div>
+                        <div class="proxy-actions">
+                            <button class="btn-secondary" onclick="editProxyName(${index})" style="padding: 6px 12px; font-size: 12px;">✏️ 改名</button>
+                            <button class="btn-danger" onclick="deleteProxy(${index})">删除</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 导出 YAML 文件
+        function exportYaml() {
+            if (proxies.length === 0) {
+                showAlert('没有可导出的节点', 'error');
+                return;
+            }
+
+            const now = new Date();
+            const timestamp = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
+
+            // 生成完整的 Clash 配置
+            let yaml = `# Clash 配置文件\n`;
+            yaml += `# 由 Vless 转换器生成\n`;
+            yaml += `# 生成时间: ${timestamp}\n\n`;
+
+            // 基础配置
+            yaml += `port: 7890\n`;
+            yaml += `socks-port: 7891\n`;
+            yaml += `allow-lan: true\n`;
+            yaml += `mode: Rule\n`;
+            yaml += `log-level: info\n`;
+            yaml += `external-controller: :9090\n\n`;
+
+            // DNS 配置
+            yaml += `dns:\n`;
+            yaml += `  enable: true\n`;
+            yaml += `  nameserver:\n`;
+            yaml += `    - 119.29.29.29\n`;
+            yaml += `    - 223.5.5.5\n`;
+            yaml += `  fallback:\n`;
+            yaml += `    - 8.8.8.8\n`;
+            yaml += `    - 1.0.0.1\n`;
+            yaml += `    - tls://dns.google\n\n`;
+
+            // 代理节点配置
+            yaml += `proxies:\n`;
+            
+            proxies.forEach(proxy => {
+                yaml += `  - name: "${proxy.name}"\n`;
+                yaml += `    server: ${proxy.server}\n`;
+                yaml += `    port: ${proxy.port}\n`;
+                yaml += `    type: ${proxy.type}\n`;
+                yaml += `    uuid: ${proxy.uuid}\n`;
+                yaml += `    network: ${proxy.network}\n`;
+                
+                if (proxy.tls !== undefined) {
+                    yaml += `    tls: ${proxy.tls}\n`;
+                }
+                
+                // UDP 支持（默认开启）
+                yaml += `    udp: true\n`;
+                
+                if (proxy['skip-cert-verify'] !== undefined) {
+                    yaml += `    skip-cert-verify: ${proxy['skip-cert-verify']}\n`;
+                }
+                
+                if (proxy.servername) {
+                    yaml += `    servername: ${proxy.servername}\n`;
+                }
+                
+                if (proxy.flow) {
+                    yaml += `    flow: ${proxy.flow}\n`;
+                }
+                
+                // Reality 协议配置
+                if (proxy['reality-opts']) {
+                    yaml += `    reality-opts:\n`;
+                    yaml += `      public-key: ${proxy['reality-opts']['public-key']}\n`;
+                    if (proxy['reality-opts']['short-id']) {
+                        yaml += `      short-id: ${proxy['reality-opts']['short-id']}\n`;
+                    }
+                    // Reality 需要 client-fingerprint
+                    yaml += `    client-fingerprint: chrome\n`;
+                }
+                
+                // WebSocket 配置
+                if (proxy['ws-opts']) {
+                    yaml += `    ws-opts:\n`;
+                    yaml += `      path: ${proxy['ws-opts'].path}\n`;
+                    if (proxy['ws-opts'].headers && proxy['ws-opts'].headers.Host) {
+                        yaml += `      headers:\n`;
+                        yaml += `        Host: ${proxy['ws-opts'].headers.Host}\n`;
+                    }
+                }
+                
+                // gRPC 配置
+                if (proxy['grpc-opts']) {
+                    yaml += `    grpc-opts:\n`;
+                    yaml += `      grpc-service-name: ${proxy['grpc-opts']['grpc-service-name']}\n`;
+                }
+                
+                // HTTP/2 配置
+                if (proxy['h2-opts']) {
+                    yaml += `    h2-opts:\n`;
+                    yaml += `      path: ${proxy['h2-opts'].path}\n`;
+                    if (proxy['h2-opts'].host && proxy['h2-opts'].host.length > 0) {
+                        yaml += `      host:\n`;
+                        proxy['h2-opts'].host.forEach(h => {
+                            yaml += `        - ${h}\n`;
+                        });
+                    }
+                }
+            });
+
+            yaml += '\n';
+
+            // 获取所有节点名称
+            const proxyNames = proxies.map(p => `      - ${p.name}`).join('\n');
+
+            // 代理组配置
+            yaml += `proxy-groups:\n`;
+            
+            yaml += `  - name: 🚀 节点选择\n`;
+            yaml += `    type: select\n`;
+            yaml += `    proxies:\n`;
+            yaml += proxyNames + '\n';
+            yaml += `      - DIRECT\n\n`;
+
+            yaml += `  - name: 📲 电报消息\n`;
+            yaml += `    type: select\n`;
+            yaml += `    proxies:\n`;
+            yaml += proxyNames + '\n';
+            yaml += `      - 🚀 节点选择\n`;
+            yaml += `      - DIRECT\n\n`;
+
+            yaml += `  - name: 💬 AI平台\n`;
+            yaml += `    type: select\n`;
+            yaml += `    proxies:\n`;
+            yaml += proxyNames + '\n';
+            yaml += `      - 🚀 节点选择\n`;
+            yaml += `      - DIRECT\n\n`;
+
+            yaml += `  - name: 📹 油管视频\n`;
+            yaml += `    type: select\n`;
+            yaml += `    proxies:\n`;
+            yaml += proxyNames + '\n';
+            yaml += `      - 🚀 节点选择\n`;
+            yaml += `      - DIRECT\n\n`;
+
+            yaml += `  - name: 🎥 奈飞视频\n`;
+            yaml += `    type: select\n`;
+            yaml += `    proxies:\n`;
+            yaml += proxyNames + '\n';
+            yaml += `      - 🚀 节点选择\n`;
+            yaml += `      - DIRECT\n\n`;
+
+            yaml += `  - name: 🌍 国外媒体\n`;
+            yaml += `    type: select\n`;
+            yaml += `    proxies:\n`;
+            yaml += proxyNames + '\n';
+            yaml += `      - 🚀 节点选择\n`;
+            yaml += `      - DIRECT\n\n`;
+
+            yaml += `  - name: 🎯 全球直连\n`;
+            yaml += `    type: select\n`;
+            yaml += `    proxies:\n`;
+            yaml += `      - DIRECT\n`;
+            yaml += proxyNames + '\n\n';
+
+            yaml += `  - name: 🛑 广告拦截\n`;
+            yaml += `    type: select\n`;
+            yaml += `    proxies:\n`;
+            yaml += `      - REJECT\n`;
+            yaml += `      - DIRECT\n\n`;
+
+            yaml += `  - name: 🐟 漏网之鱼\n`;
+            yaml += `    type: select\n`;
+            yaml += `    proxies:\n`;
+            yaml += proxyNames + '\n';
+            yaml += `      - 🚀 节点选择\n`;
+            yaml += `      - DIRECT\n\n`;
+
+            // 路由规则
+            yaml += `rules:\n`;
+            yaml += `  # 局域网直连\n`;
+            yaml += `  - DOMAIN-SUFFIX,local,🎯 全球直连\n`;
+            yaml += `  - IP-CIDR,192.168.0.0/16,🎯 全球直连,no-resolve\n`;
+            yaml += `  - IP-CIDR,10.0.0.0/8,🎯 全球直连,no-resolve\n`;
+            yaml += `  - IP-CIDR,172.16.0.0/12,🎯 全球直连,no-resolve\n`;
+            yaml += `  - IP-CIDR,127.0.0.0/8,🎯 全球直连,no-resolve\n`;
+            yaml += `  # Telegram\n`;
+            yaml += `  - DOMAIN-SUFFIX,t.me,📲 电报消息\n`;
+            yaml += `  - DOMAIN-SUFFIX,telegram.org,📲 电报消息\n`;
+            yaml += `  - IP-CIDR,91.108.4.0/22,📲 电报消息,no-resolve\n`;
+            yaml += `  - IP-CIDR,91.108.8.0/22,📲 电报消息,no-resolve\n`;
+            yaml += `  - IP-CIDR,149.154.160.0/20,📲 电报消息,no-resolve\n`;
+            yaml += `  # AI 平台\n`;
+            yaml += `  - DOMAIN-SUFFIX,openai.com,💬 AI平台\n`;
+            yaml += `  - DOMAIN-SUFFIX,anthropic.com,💬 AI平台\n`;
+            yaml += `  - DOMAIN-SUFFIX,claude.ai,💬 AI平台\n`;
+            yaml += `  - DOMAIN-SUFFIX,chatgpt.com,💬 AI平台\n`;
+            yaml += `  # YouTube\n`;
+            yaml += `  - DOMAIN-SUFFIX,youtube.com,📹 油管视频\n`;
+            yaml += `  - DOMAIN-SUFFIX,googlevideo.com,📹 油管视频\n`;
+            yaml += `  - DOMAIN-SUFFIX,ytimg.com,📹 油管视频\n`;
+            yaml += `  # Netflix\n`;
+            yaml += `  - DOMAIN-SUFFIX,netflix.com,🎥 奈飞视频\n`;
+            yaml += `  - DOMAIN-SUFFIX,nflxvideo.net,🎥 奈飞视频\n`;
+            yaml += `  # 国外媒体\n`;
+            yaml += `  - DOMAIN-SUFFIX,twitter.com,🌍 国外媒体\n`;
+            yaml += `  - DOMAIN-SUFFIX,x.com,🌍 国外媒体\n`;
+            yaml += `  - DOMAIN-SUFFIX,facebook.com,🌍 国外媒体\n`;
+            yaml += `  - DOMAIN-SUFFIX,instagram.com,🌍 国外媒体\n`;
+            yaml += `  # Google\n`;
+            yaml += `  - DOMAIN-SUFFIX,google.com,🚀 节点选择\n`;
+            yaml += `  - DOMAIN-SUFFIX,googleapis.com,🚀 节点选择\n`;
+            yaml += `  - DOMAIN-SUFFIX,gstatic.com,🚀 节点选择\n`;
+            yaml += `  # 广告拦截\n`;
+            yaml += `  - DOMAIN-KEYWORD,ads,🛑 广告拦截\n`;
+            yaml += `  - DOMAIN-KEYWORD,adservice,🛑 广告拦截\n`;
+            yaml += `  # 中国直连\n`;
+            yaml += `  - GEOIP,CN,🎯 全球直连\n`;
+            yaml += `  # 其他全部走代理\n`;
+            yaml += `  - MATCH,🐟 漏网之鱼\n`;
+
+            // 创建下载
+            const blob = new Blob([yaml], { type: 'text/yaml' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'clash-config.yaml';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            showAlert(`成功导出 ${proxies.length} 个节点的完整配置文件`, 'success');
+        }
+
+        // 处理文件上传
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const content = e.target.result;
+                    parseYamlFile(content);
+                } catch (error) {
+                    showAlert(`读取文件失败: ${error.message}`, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 解析 YAML 文件（简单解析）
+        function parseYamlFile(content) {
+            try {
+                const lines = content.split('\n');
+                let currentProxy = null;
+                let inProxiesSection = false;
+                let importedCount = 0;
+
+                for (let line of lines) {
+                    const trimmed = line.trim();
+                    
+                    if (trimmed === 'proxies:') {
+                        inProxiesSection = true;
+                        continue;
+                    }
+
+                    if (inProxiesSection) {
+                        if (trimmed.startsWith('- name:')) {
+                            if (currentProxy && currentProxy.type === 'vless') {
+                                proxies.push(currentProxy);
+                                importedCount++;
+                            }
+                            currentProxy = {
+                                name: trimmed.match(/name:\s*["']?(.+?)["']?$/)?.[1] || 'Unknown',
+                                type: '',
+                                server: '',
+                                port: 0,
+                                uuid: '',
+                                cipher: 'auto'
+                            };
+                        } else if (currentProxy) {
+                            if (trimmed.startsWith('type:')) {
+                                currentProxy.type = trimmed.split(':')[1].trim();
+                            } else if (trimmed.startsWith('server:')) {
+                                currentProxy.server = trimmed.split(':')[1].trim();
+                            } else if (trimmed.startsWith('port:')) {
+                                currentProxy.port = parseInt(trimmed.split(':')[1].trim());
+                            } else if (trimmed.startsWith('uuid:')) {
+                                currentProxy.uuid = trimmed.split(':')[1].trim();
+                            } else if (trimmed.startsWith('tls:')) {
+                                currentProxy.tls = trimmed.split(':')[1].trim() === 'true';
+                            } else if (trimmed.startsWith('network:')) {
+                                currentProxy.network = trimmed.split(':')[1].trim();
+                            } else if (trimmed.startsWith('servername:')) {
+                                currentProxy.servername = trimmed.split(':')[1].trim();
+                            }
+                        }
+                        
+                        if (trimmed.startsWith('proxy-groups:')) {
+                            inProxiesSection = false;
+                        }
+                    }
+                }
+
+                if (currentProxy && currentProxy.type === 'vless') {
+                    proxies.push(currentProxy);
+                    importedCount++;
+                }
+
+                updateProxyList();
+                showAlert(`成功导入 ${importedCount} 个 Vless 节点`, 'success');
+            } catch (error) {
+                showAlert(`解析 YAML 文件失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 显示提示信息
+        function showAlert(message, type) {
+            const alertBox = document.getElementById('alertBox');
+            alertBox.className = `alert alert-${type} show`;
+            alertBox.textContent = message;
+            
+            setTimeout(() => {
+                alertBox.classList.remove('show');
+            }, 3000);
+        }
+
+        // 初始化
+        updateProxyList();
+    </script>
+</body>
+</html>
