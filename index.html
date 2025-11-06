@@ -100,7 +100,7 @@
         }
 
         textarea {
-            min-height: 120px;
+            min-height: 150px;
             resize: vertical;
         }
 
@@ -347,16 +347,6 @@
                 </div>
             </div>
 
-            <!-- 添加单个节点 -->
-            <div class="section">
-                <div class="section-title">➕ 添加单个节点</div>
-                <div class="input-group">
-                    <label for="singleVless">Vless 链接</label>
-                    <input type="text" id="singleVless" placeholder="vless://uuid@server:port?...#name">
-                </div>
-                <button class="btn-primary" onclick="addSingleProxy()">添加节点</button>
-            </div>
-
             <!-- 批量添加节点 -->
             <div class="section">
                 <div class="section-title">📋 批量添加节点</div>
@@ -441,6 +431,18 @@
                     }
                 }
 
+                // ALPN 支持
+                const alpn = urlParams.get('alpn');
+                if (alpn) {
+                    proxy.alpn = alpn.split(',');
+                }
+
+                // 客户端指纹
+                const fingerprint = urlParams.get('fp') || urlParams.get('fingerprint');
+                if (fingerprint) {
+                    proxy['client-fingerprint'] = fingerprint;
+                }
+
                 // Flow 控制（Reality 和 XTLS 需要）
                 const flow = urlParams.get('flow');
                 if (flow) {
@@ -457,6 +459,11 @@
                             'public-key': publicKey,
                             'short-id': shortId
                         };
+                        
+                        // Reality 默认使用 chrome 指纹（如果未指定）
+                        if (!proxy['client-fingerprint']) {
+                            proxy['client-fingerprint'] = 'chrome';
+                        }
                     }
                 }
 
@@ -470,6 +477,15 @@
                     if (host) {
                         proxy['ws-opts'].headers.Host = host;
                     }
+                    // WebSocket 最大早期数据
+                    const maxEarlyData = urlParams.get('ed') || urlParams.get('max_early_data');
+                    if (maxEarlyData) {
+                        proxy['ws-opts']['max-early-data'] = parseInt(maxEarlyData);
+                        const earlyDataHeader = urlParams.get('eh') || urlParams.get('early_data_header_name');
+                        if (earlyDataHeader) {
+                            proxy['ws-opts']['early-data-header-name'] = earlyDataHeader;
+                        }
+                    }
                 } else if (network === 'grpc') {
                     proxy['grpc-opts'] = {
                         'grpc-service-name': urlParams.get('serviceName') || urlParams.get('service') || ''
@@ -479,33 +495,20 @@
                         path: urlParams.get('path') || '/',
                         host: urlParams.get('host') ? [urlParams.get('host')] : []
                     };
+                } else if (network === 'tcp') {
+                    // TCP headerType 支持
+                    const headerType = urlParams.get('headerType');
+                    if (headerType && headerType !== 'none') {
+                        proxy['tcp-opts'] = {
+                            'header-type': headerType
+                        };
+                    }
                 }
 
                 return proxy;
             } catch (error) {
                 console.error('解析 Vless 链接失败:', error);
                 throw error;
-            }
-        }
-
-        // 添加单个节点
-        function addSingleProxy() {
-            const input = document.getElementById('singleVless');
-            const url = input.value.trim();
-
-            if (!url) {
-                showAlert('请输入 Vless 链接', 'error');
-                return;
-            }
-
-            try {
-                const proxy = parseVlessUrl(url);
-                proxies.push(proxy);
-                input.value = '';
-                updateProxyList();
-                showAlert(`成功添加节点: ${proxy.name}`, 'success');
-            } catch (error) {
-                showAlert(`解析失败: ${error.message}`, 'error');
             }
         }
 
@@ -521,6 +524,7 @@
 
             let successCount = 0;
             let failCount = 0;
+            const failedUrls = [];
 
             urls.forEach(url => {
                 try {
@@ -529,14 +533,20 @@
                     successCount++;
                 } catch (error) {
                     failCount++;
+                    failedUrls.push({ url: url.substring(0, 50) + '...', error: error.message });
                     console.error('解析失败:', url, error);
                 }
             });
 
             input.value = '';
             updateProxyList();
-            showAlert(`成功添加 ${successCount} 个节点${failCount > 0 ? `，失败 ${failCount} 个` : ''}`, 
-                      failCount > 0 ? 'info' : 'success');
+            
+            let message = `成功添加 ${successCount} 个节点`;
+            if (failCount > 0) {
+                message += `，失败 ${failCount} 个`;
+                console.log('失败的链接:', failedUrls);
+            }
+            showAlert(message, failCount > 0 ? 'info' : 'success');
         }
 
         // 批量重命名
@@ -661,6 +671,7 @@
                 if (proxy.tls) details += ' + TLS';
                 if (proxy['reality-opts']) details += ' (Reality)';
                 if (proxy.flow) details += ` | flow: ${proxy.flow}`;
+                if (proxy.alpn) details += ` | alpn: ${proxy.alpn.join(',')}`;
                 
                 return `
                     <div class="proxy-item">
@@ -737,6 +748,17 @@
                     yaml += `    servername: ${proxy.servername}\n`;
                 }
                 
+                if (proxy.alpn && proxy.alpn.length > 0) {
+                    yaml += `    alpn:\n`;
+                    proxy.alpn.forEach(a => {
+                        yaml += `      - ${a}\n`;
+                    });
+                }
+                
+                if (proxy['client-fingerprint']) {
+                    yaml += `    client-fingerprint: ${proxy['client-fingerprint']}\n`;
+                }
+                
                 if (proxy.flow) {
                     yaml += `    flow: ${proxy.flow}\n`;
                 }
@@ -748,8 +770,6 @@
                     if (proxy['reality-opts']['short-id']) {
                         yaml += `      short-id: ${proxy['reality-opts']['short-id']}\n`;
                     }
-                    // Reality 需要 client-fingerprint
-                    yaml += `    client-fingerprint: chrome\n`;
                 }
                 
                 // WebSocket 配置
@@ -759,6 +779,12 @@
                     if (proxy['ws-opts'].headers && proxy['ws-opts'].headers.Host) {
                         yaml += `      headers:\n`;
                         yaml += `        Host: ${proxy['ws-opts'].headers.Host}\n`;
+                    }
+                    if (proxy['ws-opts']['max-early-data']) {
+                        yaml += `      max-early-data: ${proxy['ws-opts']['max-early-data']}\n`;
+                    }
+                    if (proxy['ws-opts']['early-data-header-name']) {
+                        yaml += `      early-data-header-name: ${proxy['ws-opts']['early-data-header-name']}\n`;
                     }
                 }
                 
@@ -778,6 +804,12 @@
                             yaml += `        - ${h}\n`;
                         });
                     }
+                }
+                
+                // TCP 配置
+                if (proxy['tcp-opts']) {
+                    yaml += `    tcp-opts:\n`;
+                    yaml += `      header-type: ${proxy['tcp-opts']['header-type']}\n`;
                 }
             });
 
@@ -931,6 +963,7 @@
                 let currentProxy = null;
                 let inProxiesSection = false;
                 let importedCount = 0;
+                let currentSection = null;
 
                 for (let line of lines) {
                     const trimmed = line.trim();
@@ -952,23 +985,38 @@
                                 server: '',
                                 port: 0,
                                 uuid: '',
-                                cipher: 'auto'
+                                network: 'tcp'
                             };
+                            currentSection = null;
                         } else if (currentProxy) {
-                            if (trimmed.startsWith('type:')) {
-                                currentProxy.type = trimmed.split(':')[1].trim();
-                            } else if (trimmed.startsWith('server:')) {
-                                currentProxy.server = trimmed.split(':')[1].trim();
-                            } else if (trimmed.startsWith('port:')) {
-                                currentProxy.port = parseInt(trimmed.split(':')[1].trim());
-                            } else if (trimmed.startsWith('uuid:')) {
-                                currentProxy.uuid = trimmed.split(':')[1].trim();
-                            } else if (trimmed.startsWith('tls:')) {
-                                currentProxy.tls = trimmed.split(':')[1].trim() === 'true';
-                            } else if (trimmed.startsWith('network:')) {
-                                currentProxy.network = trimmed.split(':')[1].trim();
-                            } else if (trimmed.startsWith('servername:')) {
-                                currentProxy.servername = trimmed.split(':')[1].trim();
+                            // 检测是否进入子配置节
+                            if (trimmed.endsWith('-opts:')) {
+                                currentSection = trimmed.replace('-opts:', '');
+                                currentProxy[trimmed] = {};
+                            } else if (currentSection && trimmed.startsWith('- ')) {
+                                // 处理数组项
+                                const value = trimmed.substring(2);
+                                if (!Array.isArray(currentProxy[currentSection + '-opts'])) {
+                                    currentProxy[currentSection + '-opts'] = [];
+                                }
+                                currentProxy[currentSection + '-opts'].push(value);
+                            } else if (currentSection && trimmed.includes(':')) {
+                                // 处理子配置项
+                                const [key, value] = trimmed.split(':').map(s => s.trim());
+                                currentProxy[currentSection + '-opts'][key] = value;
+                            } else if (trimmed.includes(':')) {
+                                // 处理主配置项
+                                const [key, value] = trimmed.split(':').map(s => s.trim());
+                                if (key === 'type') currentProxy.type = value;
+                                else if (key === 'server') currentProxy.server = value;
+                                else if (key === 'port') currentProxy.port = parseInt(value);
+                                else if (key === 'uuid') currentProxy.uuid = value;
+                                else if (key === 'tls') currentProxy.tls = value === 'true';
+                                else if (key === 'network') currentProxy.network = value;
+                                else if (key === 'servername') currentProxy.servername = value;
+                                else if (key === 'flow') currentProxy.flow = value;
+                                else if (key === 'client-fingerprint') currentProxy['client-fingerprint'] = value;
+                                else if (key === 'skip-cert-verify') currentProxy['skip-cert-verify'] = value === 'true';
                             }
                         }
                         
